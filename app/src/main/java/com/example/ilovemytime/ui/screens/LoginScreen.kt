@@ -1,5 +1,6 @@
 package com.example.ilovemytime.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
@@ -10,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -24,6 +26,9 @@ fun LoginScreen(
     onNavigateToDashboard: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
 
     Box(
         modifier = Modifier
@@ -68,6 +73,7 @@ fun LoginScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = {
                     if (name.isNotBlank()) {
+                        sharedPreferences.edit().putString("userName", name).apply()
                         viewModel.setUserName(name)
                         onNavigateToDashboard()
                     }
@@ -78,6 +84,7 @@ fun LoginScreen(
                 text = "Entrar",
                 onClick = {
                     if (name.isNotBlank()) {
+                        sharedPreferences.edit().putString("userName", name).apply()
                         viewModel.setUserName(name)
                         onNavigateToDashboard()
                     }

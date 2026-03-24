@@ -1,6 +1,7 @@
 package com.example.ilovemytime
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -18,9 +19,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.ilovemytime.ui.theme.ILoveMyTimeTheme
 import com.example.ilovemytime.viewmodel.TaskViewModel
-import com.example.ilovemytime.viewmodel.TaskViewModelFactory // Asegúrate de tener esta importación
-import com.example.ilovemytime.data.AppDatabase // Importación de tu base de datos
-import com.example.ilovemytime.notifications.AlarmScheduler // Importación del scheduler
+import com.example.ilovemytime.viewmodel.TaskViewModelFactory
+import com.example.ilovemytime.data.AppDatabase
+import com.example.ilovemytime.notifications.AlarmScheduler
 import com.example.ilovemytime.navigation.Screen
 import com.example.ilovemytime.ui.screens.*
 
@@ -32,9 +33,16 @@ class MainActivity : ComponentActivity() {
             ILoveMyTimeTheme {
                 val context = LocalContext.current
 
+                val sharedPreferences = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+                val savedName = sharedPreferences.getString("userName", "")
+
                 val database = AppDatabase.getDatabase(context)
                 val factory = TaskViewModelFactory(database.taskDao())
                 val viewModel: TaskViewModel = viewModel(factory = factory)
+
+                if (!savedName.isNullOrEmpty()) {
+                    viewModel.setUserName(savedName)
+                }
 
                 val alarmScheduler = AlarmScheduler(context)
 
@@ -70,9 +78,11 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                val startDest = if (!savedName.isNullOrEmpty()) Screen.Dashboard.route else Screen.Login.route
+
                 NavHost(
                     navController = navController,
-                    startDestination = Screen.Login.route
+                    startDestination = startDest
                 ) {
                     composable(Screen.Login.route) {
                         LoginScreen(

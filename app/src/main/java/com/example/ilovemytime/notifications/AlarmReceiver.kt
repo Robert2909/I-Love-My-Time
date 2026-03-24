@@ -20,7 +20,8 @@ class AlarmReceiver : BroadcastReceiver() {
         val title = intent.getStringExtra("EXTRA_TITLE") ?: "¡Es hora de tu actividad!"
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val channelId = "ilovemytime_channel"
+
+        val channelId = "ilovemytime_channel_v2"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -28,6 +29,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 "Recordatorios de Tareas",
                 NotificationManager.IMPORTANCE_HIGH
             )
+            channel.enableVibration(true)
             notificationManager.createNotificationChannel(channel)
         }
 
@@ -49,6 +51,7 @@ class AlarmReceiver : BroadcastReceiver() {
             .setContentTitle(title)
             .setContentText(taskName)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .build()
