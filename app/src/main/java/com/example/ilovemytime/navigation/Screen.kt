@@ -17,4 +17,8 @@ sealed class Screen(val route: String) {
     }
     object Notifications : Screen("notifications")
     object Profile : Screen("profile")
+
+    object AlarmRinging : Screen("alarm_ringing/{taskId}/{taskName}") {
+        fun createRoute(taskId: String, taskName: String) = "alarm_ringing/$taskId/$taskName"
+    }
 }

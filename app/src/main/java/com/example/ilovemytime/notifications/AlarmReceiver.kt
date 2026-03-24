@@ -21,7 +21,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val channelId = "ilovemytime_channel_v2"
+        val channelId = "ilovemytime_channel_v3"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -33,16 +33,17 @@ class AlarmReceiver : BroadcastReceiver() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        val tapIntent = Intent(context, MainActivity::class.java).apply {
+        val fullScreenIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            putExtra("DESTINATION", "satisfaction_form")
+            putExtra("DESTINATION", "alarm_ringing")
             putExtra("TASK_ID", taskId)
+            putExtra("TASK_NAME", taskName)
         }
 
-        val pendingIntent = PendingIntent.getActivity(
+        val fullScreenPendingIntent = PendingIntent.getActivity(
             context,
             taskId.hashCode(),
-            tapIntent,
+            fullScreenIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -52,8 +53,9 @@ class AlarmReceiver : BroadcastReceiver() {
             .setContentText(taskName)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setFullScreenIntent(fullScreenPendingIntent, true)
             .setAutoCancel(true)
-            .setContentIntent(pendingIntent)
             .build()
 
         notificationManager.notify(taskId.hashCode(), notification)

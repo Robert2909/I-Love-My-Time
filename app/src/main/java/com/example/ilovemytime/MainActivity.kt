@@ -67,14 +67,21 @@ class MainActivity : ComponentActivity() {
 
                 val intentDestination = activity?.intent?.getStringExtra("DESTINATION")
                 val intentTaskId = activity?.intent?.getStringExtra("TASK_ID")
+                val intentTaskName = activity?.intent?.getStringExtra("TASK_NAME")
 
-                LaunchedEffect(intentDestination, intentTaskId) {
+                LaunchedEffect(intentDestination, intentTaskId, intentTaskName) {
                     if (intentDestination == "satisfaction_form" && intentTaskId != null) {
                         navController.navigate(Screen.SatisfactionForm.createRoute(intentTaskId)) {
                             popUpTo(Screen.Dashboard.route) { inclusive = false }
                         }
-                        activity.intent.removeExtra("DESTINATION")
-                        activity.intent.removeExtra("TASK_ID")
+                        activity?.intent?.removeExtra("DESTINATION")
+                        activity?.intent?.removeExtra("TASK_ID")
+                    } else if (intentDestination == "alarm_ringing" && intentTaskId != null) {
+                        val safeName = android.net.Uri.encode(intentTaskName ?: "Tu Actividad")
+                        navController.navigate(Screen.AlarmRinging.createRoute(intentTaskId, safeName))
+                        activity?.intent?.removeExtra("DESTINATION")
+                        activity?.intent?.removeExtra("TASK_ID")
+                        activity?.intent?.removeExtra("TASK_NAME")
                     }
                 }
 
@@ -196,6 +203,21 @@ class MainActivity : ComponentActivity() {
                             viewModel = viewModel,
                             onNavigateToTasks = { navController.navigate(Screen.TaskList.route) { popUpTo(0) } },
                             onNavigateToNotifications = { navController.navigate(Screen.Notifications.route) { popUpTo(Screen.TaskList.route) } }
+                        )
+                    }
+
+                    composable(Screen.AlarmRinging.route) { backStackEntry ->
+                        val taskNameEncoded = backStackEntry.arguments?.getString("taskName") ?: "Tu Actividad"
+                        val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
+                        val taskName = android.net.Uri.decode(taskNameEncoded)
+
+                        AlarmRingingScreen(
+                            taskName = taskName,
+                            onDismiss = {
+                                navController.navigate(Screen.SatisfactionForm.createRoute(taskId)) {
+                                    popUpTo(Screen.AlarmRinging.route) { inclusive = true }
+                                }
+                            }
                         )
                     }
                 }
