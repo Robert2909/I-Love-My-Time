@@ -1,35 +1,33 @@
 package com.example.ilovemytime
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.ilovemytime.ui.theme.ILoveMyTimeTheme
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.ilovemytime.ui.theme.ILoveMyTimeTheme
 import com.example.ilovemytime.viewmodel.TaskViewModel
 import com.example.ilovemytime.navigation.Screen
-import com.example.ilovemytime.ui.screens.LoginScreen
-import com.example.ilovemytime.ui.screens.DashboardScreen
-import com.example.ilovemytime.ui.screens.TaskListScreen
-import com.example.ilovemytime.ui.screens.AddTaskMenuScreen
-import com.example.ilovemytime.ui.screens.AddCycleTaskScreen
-import com.example.ilovemytime.ui.screens.AddAlarmScreen
-import com.example.ilovemytime.ui.screens.AddDailyTaskScreen
-import com.example.ilovemytime.ui.screens.AddHabitScreen
-import com.example.ilovemytime.ui.screens.SatisfactionFormScreen
-import com.example.ilovemytime.ui.screens.CycleTimerScreen
-import com.example.ilovemytime.ui.screens.NotificationsScreen
-import com.example.ilovemytime.ui.screens.ProfileScreen
+import com.example.ilovemytime.ui.screens.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,7 +37,43 @@ class MainActivity : ComponentActivity() {
             ILoveMyTimeTheme {
                 val viewModel: TaskViewModel = viewModel()
                 val navController = rememberNavController()
+                val context = LocalContext.current
+                val activity = context as? MainActivity
 
+
+                val permissionLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission()
+                ) { isGranted ->
+
+                }
+
+                LaunchedEffect(Unit) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        val permissionCheck = ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.POST_NOTIFICATIONS
+                        )
+                        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+                }
+
+
+                val intentDestination = activity?.intent?.getStringExtra("DESTINATION")
+                val intentTaskId = activity?.intent?.getStringExtra("TASK_ID")
+
+                LaunchedEffect(intentDestination, intentTaskId) {
+                    if (intentDestination == "satisfaction_form" && intentTaskId != null) {
+                        navController.navigate(Screen.SatisfactionForm.createRoute(intentTaskId)) {
+                            popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        }
+                        activity.intent.removeExtra("DESTINATION")
+                        activity.intent.removeExtra("TASK_ID")
+                    }
+                }
+
+                
                 NavHost(
                     navController = navController,
                     startDestination = Screen.Login.route

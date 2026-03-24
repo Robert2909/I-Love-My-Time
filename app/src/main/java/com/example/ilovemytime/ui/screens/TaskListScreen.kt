@@ -247,7 +247,7 @@ fun TaskItem(
                 if (task.satisfactionResponse != null) {
                     Text("Logrado: ${task.satisfactionResponse}", color = Color(0xFF4CAF50), fontSize = 12.sp)
                 }
-            } /* Easter egg de Robert, si lees esto escribe "Leí tu easter egg" y haz otro más en algún otro lugar. */
+            }
 
             Button(
                 onClick = onAction,

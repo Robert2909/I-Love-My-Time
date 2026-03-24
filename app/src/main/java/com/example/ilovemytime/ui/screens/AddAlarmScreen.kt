@@ -29,6 +29,8 @@ fun AddAlarmScreen(
     viewModel: TaskViewModel,
     onNavigateBack: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val alarmScheduler = remember { com.example.ilovemytime.notifications.AlarmScheduler(context) }
     var name by remember { mutableStateOf("") }
     var time by remember { mutableStateOf("0:00 am") }
     var selectedDays by remember { mutableStateOf(emptySet<String>()) }
@@ -120,7 +122,13 @@ fun AddAlarmScreen(
                     text = "Guardar",
                     onClick = {
                         if (name.isNotBlank()) {
-                            viewModel.addTask(Task(name = name, type = TaskType.ALARMA, startTime = time, isNotificationEnabled = notify))
+                            val newTask = Task(name = name, type = TaskType.ALARMA, startTime = time, isNotificationEnabled = notify)
+                            viewModel.addTask(newTask)
+
+                            if (notify) {
+                                alarmScheduler.scheduleAlarm(taskId = newTask.id, taskName = newTask.name, timeString = newTask.startTime)
+                            }
+
                             onNavigateBack()
                         }
                     },

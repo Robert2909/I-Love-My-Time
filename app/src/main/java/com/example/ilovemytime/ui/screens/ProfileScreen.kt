@@ -69,7 +69,7 @@ fun ProfileScreen(
                         .size(120.dp)
                         .clip(CircleShape)
                         .background(Color.White)
-                        .clickable { /* Photo Picker placeholder */ },
+                        .clickable { },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(

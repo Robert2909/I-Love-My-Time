@@ -11,6 +11,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import com.example.ilovemytime.ui.components.PremiumButton
 import com.example.ilovemytime.viewmodel.TaskViewModel
 import kotlinx.coroutines.delay
 
@@ -20,12 +22,30 @@ fun CycleTimerScreen(
     viewModel: TaskViewModel,
     onNavigateToSatisfaction: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    val alarmScheduler = remember { com.example.ilovemytime.notifications.AlarmScheduler(context) }
+
     val tasks by viewModel.tasks.collectAsState()
     val task = tasks.find { it.id == taskId } ?: return
 
-    var currentCycle by remember { mutableStateOf(1) }
-    var isWorking by remember { mutableStateOf(true) }
+    var currentCycle by remember { mutableStateOf(1)}
+    var isWorking by remember { mutableStateOf(true)}
     var timeLeft by remember { mutableStateOf((task.workTime?.toIntOrNull() ?: 25) * 60) }
+
+    LaunchedEffect(isWorking, currentCycle) {
+        val delaySeconds = if (isWorking) (task.workTime?.toIntOrNull() ?: 25) * 60 else (task.breakTime?.toIntOrNull() ?: 5) * 60
+
+        val title = if (isWorking) "¡A descansar!" else "¡A trabajar!"
+        val message = if (isWorking) "Terminaste un ciclo de ${task.name}" else "Se acabó el descanso, regresa a ${task.name}"
+
+        alarmScheduler.scheduleTimerAlarm(taskId, title, message, delaySeconds)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            alarmScheduler.cancelTimerAlarm(taskId)
+        }
+    }
 
     LaunchedEffect(key1 = timeLeft, key2 = isWorking) {
         if (timeLeft > 0) {
@@ -60,7 +80,7 @@ fun CycleTimerScreen(
             ),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally){
             Text(
                 text = if (isWorking) "¡Trabajando!" else "¡Descanso!",
                 fontSize = 40.sp,
@@ -82,7 +102,7 @@ fun CycleTimerScreen(
             )
             Spacer(modifier = Modifier.height(64.dp))
             Button(
-                onClick = { onNavigateToSatisfaction(taskId) },
+                onClick = { onNavigateToSatisfaction(taskId)},
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.3f))
             ) {
                 Text("Omitir y terminar", color = Color.White)
