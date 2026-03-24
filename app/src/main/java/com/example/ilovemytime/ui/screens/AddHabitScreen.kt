@@ -20,10 +20,12 @@ import com.example.ilovemytime.data.TaskType
 import com.example.ilovemytime.ui.components.PremiumButton
 import com.example.ilovemytime.ui.components.PremiumTextField
 import com.example.ilovemytime.viewmodel.TaskViewModel
+import com.example.ilovemytime.notifications.AlarmScheduler // Importación necesaria
 
 @Composable
 fun AddHabitScreen(
     viewModel: TaskViewModel,
+    alarmScheduler: AlarmScheduler,
     onNavigateBack: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
@@ -54,7 +56,14 @@ fun AddHabitScreen(
                 color = Color(0xFF333333)
             )
 
-            PremiumTextField(value = name, onValueChange = { name = it }, label = "Nombre del hábito", placeholder = "Ej. Beber agua", keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next))
+            PremiumTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = "Nombre del hábito",
+                placeholder = "Ej. Beber agua",
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+            )
+
             PremiumTextField(
                 value = frequency,
                 onValueChange = { frequency = it },
@@ -63,7 +72,16 @@ fun AddHabitScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = {
                     if (name.isNotBlank()) {
-                        viewModel.addTask(Task(name = name, type = TaskType.HABITO, isNotificationEnabled = notify))
+                        val newTask = Task(name = name, type = TaskType.HABITO, isNotificationEnabled = notify)
+                        viewModel.addTask(newTask)
+
+                        if (notify) {
+                            alarmScheduler.scheduleAlarm(
+                                taskId = newTask.id,
+                                taskName = newTask.name,
+                                timeString = newTask.startTime
+                            )
+                        }
                         onNavigateBack()
                     }
                 })
@@ -78,7 +96,16 @@ fun AddHabitScreen(
                 text = "Guardar",
                 onClick = {
                     if (name.isNotBlank()) {
-                        viewModel.addTask(Task(name = name, type = TaskType.HABITO, isNotificationEnabled = notify))
+                        val newTask = Task(name = name, type = TaskType.HABITO, isNotificationEnabled = notify)
+                        viewModel.addTask(newTask)
+
+                        if (notify) {
+                            alarmScheduler.scheduleAlarm(
+                                taskId = newTask.id,
+                                taskName = newTask.name,
+                                timeString = newTask.startTime
+                            )
+                        }
                         onNavigateBack()
                     }
                 }

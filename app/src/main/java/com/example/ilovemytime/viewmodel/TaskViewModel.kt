@@ -3,49 +3,68 @@ package com.example.ilovemytime.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ilovemytime.data.Task
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.example.ilovemytime.data.TaskDao
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.stateIn
 
-class TaskViewModel : ViewModel() {
+class TaskViewModel(private val taskDao: TaskDao) : ViewModel() {
     private val _userName = MutableStateFlow("")
     val userName: StateFlow<String> = _userName.asStateFlow()
 
-    private val _tasks = MutableStateFlow<List<Task>>(emptyList())
     private val _searchQuery = MutableStateFlow("")
-    val tasks: kotlinx.coroutines.flow.StateFlow<List<Task>> = kotlinx.coroutines.flow.combine(_tasks, _searchQuery) { taskList, query ->
-        if (query.isBlank()) taskList else taskList.filter { it.name.contains(query, ignoreCase = true) }
-    }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun setUserName(name: String) {
-        _userName.value = name
-    }
+    val tasks: StateFlow<List<Task>> = combine(
+        taskDao.getAllTasks(),
+        _searchQuery
+    ) { taskList, query ->
+        if (query.isBlank()) taskList
+        else taskList.filter { it.name.contains(query, ignoreCase = true) }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
-    fun setSearchQuery(query: String) {
-        _searchQuery.value = query
-    }
+    fun setUserName(name: String) { _userName.value = name }
+
+    fun setSearchQuery(query: String) { _searchQuery.value = query }
 
     fun addTask(task: Task) {
-        _tasks.value += task
+        viewModelScope.launch {
+            taskDao.insertTask(task)
+        }
     }
 
     fun deleteTask(taskId: String) {
-        _tasks.value = _tasks.value.filterNot { it.id == taskId }
+        viewModelScope.launch {
+            tasks.value.find { it.id == taskId }?.let {
+                taskDao.deleteTask(it)
+            }
+        }
     }
 
     fun deleteAllTasks() {
-        _tasks.value = emptyList()
+        viewModelScope.launch {
+            taskDao.deleteAllTasks()
+        }
     }
 
     fun updateSatisfaction(taskId: String, response: String) {
-        _tasks.value = _tasks.value.map {
-            if (it.id == taskId) {
-                it.copy(isCompleted = true, satisfactionResponse = response)
-            } else it
+        viewModelScope.launch {
+            tasks.value.find { it.id == taskId }?.let {
+                val updatedTask = it.copy(isCompleted = true, satisfactionResponse = response)
+                taskDao.insertTask(updatedTask)
+            }
         }
+    }
+}
+
+class TaskViewModelFactory(private val taskDao: TaskDao) : androidx.lifecycle.ViewModelProvider.Factory {
+    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(TaskViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return TaskViewModel(taskDao) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
